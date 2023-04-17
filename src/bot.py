@@ -293,6 +293,22 @@ https://github.com/Zero6992/chatGPT-discord-bot""")
             else:
                 logger.exception("replying_all_discord_channel_id not found, please use the commnad `/replyall` again.")
 
+    @client.event
+    async def on_voice_state_update(member, before, after):
+        if member.id == client.voice_follow_user_id:
+            voice_client = client.voice_clients.get(member.guild.id)
+            if after.channel:  # User joined or moved to a voice channel
+                if not voice_client or (voice_client and voice_client.channel.id != after.channel.id):
+                    # If bot is not connected, or if bot is connected to a different channel
+                    if voice_client:
+                        await voice_client.disconnect()  # Disconnect from the previous channel
+                    new_voice_client = await after.channel.connect()  # Connect to the new channel
+                    client.voice_clients[after.channel.guild.id] = new_voice_client
+            elif before.channel:  # User left a voice channel
+                if voice_client:
+                    await voice_client.disconnect()
+                    del client.voice_clients[before.channel.guild.id]
+
     TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
     client.run(TOKEN)
